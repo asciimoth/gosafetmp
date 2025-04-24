@@ -30,7 +30,7 @@ func checkReaper() {
 }
 
 func spawnReaper(basedir, lockfile string) error {
-	cmd := exec.Command(os.Args[0])
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 
 	cmd.Env = append(os.Environ(),
 		basenv+"="+basedir,
@@ -41,7 +41,10 @@ func spawnReaper(basedir, lockfile string) error {
 
 	if runtime.GOOS != "windows" {
 		// Direct stdio to /dev/null
-		null, _ := os.OpenFile("/dev/null", os.O_RDWR, 0)
+		null, err := os.OpenFile("/dev/null", os.O_RDWR, 0)
+		if err != nil {
+			return err
+		}
 		cmd.Stdin = null
 		cmd.Stdout = null
 		cmd.Stderr = null

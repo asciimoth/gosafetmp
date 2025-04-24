@@ -8,6 +8,10 @@ import (
 	"sync/atomic"
 )
 
+var (
+	SHOULD_SPAWN_REAPER = true
+)
+
 // There are MUST be only one instance of TmpDirManager in whole program
 var (
 	instance *TmpDirManager = nil
@@ -17,7 +21,6 @@ var (
 )
 
 func Destroy(path string) error {
-	// TODO: Maybe also use GNU shred on linux systems?
 	return os.RemoveAll(path)
 }
 
@@ -47,8 +50,8 @@ func (t TmpDirManager) NewDir() (string, error) {
 	return dir, nil
 }
 
-func setupOnce(reaper bool) (*TmpDirManager, error) {
-	if reaper {
+func setupOnce() (*TmpDirManager, error) {
+	if SHOULD_SPAWN_REAPER {
 		checkReaper()
 	}
 	basedir, err := os.MkdirTemp("", "")
@@ -62,15 +65,18 @@ func setupOnce(reaper bool) (*TmpDirManager, error) {
 		baseDir: basedir,
 	}
 	// TODO: Set up OS signals handlers
-	if reaper {
-		spawnReaper(basedir, lockfile)
+	if SHOULD_SPAWN_REAPER {
+		err := spawnReaper(basedir, lockfile)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &dirman, nil
 }
 
-func Setup(reaper bool) (*TmpDirManager, error) {
+func Setup() (*TmpDirManager, error) {
 	once.Do(func() {
-		instance, setupErr = setupOnce(reaper)
+		instance, setupErr = setupOnce()
 	})
 	return instance, setupErr
 }
