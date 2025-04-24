@@ -16,7 +16,7 @@ const ulockTime int64 = lockUpdateTime * 2
 func waitFileLock(path string) {
 	for {
 		time.Sleep(time.Duration(lockUpdateTime))
-		dat, err := os.ReadFile("/tmp/dat")
+		dat, err := os.ReadFile(path)
 		if err != nil {
 			return
 		}

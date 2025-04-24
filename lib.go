@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-
-	"golang.org/x/sys/unix"
 )
 
 // There are MUST be only one instance of TmpDirManager in whole program
@@ -17,17 +15,6 @@ var (
 	once     sync.Once
 	counter  atomic.Int64
 )
-
-const TMPFS_MAGIC = 0x01021994
-
-func IsInTMPFS(path string) bool {
-	// TODO: On non UNIX systems just return false
-	var st unix.Statfs_t
-	if err := unix.Statfs(path, &st); err != nil {
-		return false
-	}
-	return st.Type == TMPFS_MAGIC
-}
 
 func Destroy(path string) error {
 	// TODO: Maybe also use GNU shred on linux systems?
@@ -60,25 +47,30 @@ func (t TmpDirManager) NewDir() (string, error) {
 	return dir, nil
 }
 
-func setupOnce() (*TmpDirManager, error) {
-	// TODO: Check if it is reaper daemon
+func setupOnce(reaper bool) (*TmpDirManager, error) {
+	if reaper {
+		checkReaper()
+	}
 	basedir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, err
 	}
 	// TODO: Setup basedir autodeletion (in Windows case)
-	lockFile(path.Join(basedir, "lock"))
+	lockfile := path.Join(basedir, "lock")
+	lockFile(lockfile)
 	dirman := TmpDirManager{
 		baseDir: basedir,
 	}
 	// TODO: Set up OS signals handlers
-	// TODO: Spawn reaper daemon
+	if reaper {
+		spawnReaper(basedir, lockfile)
+	}
 	return &dirman, nil
 }
 
-func Setup() (*TmpDirManager, error) {
+func Setup(reaper bool) (*TmpDirManager, error) {
 	once.Do(func() {
-		instance, setupErr = setupOnce()
+		instance, setupErr = setupOnce(reaper)
 	})
 	return instance, setupErr
 }
