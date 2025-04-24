@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	gosafetmp.Setup()
 	tmpman, err := gosafetmp.Setup()
 	fmt.Println(tmpman, err)
 	if err != nil {

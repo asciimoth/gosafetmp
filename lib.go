@@ -13,6 +13,7 @@ import (
 // There are MUST be only one instance of TmpDirManager in whole program
 var (
 	instance *TmpDirManager = nil
+	setupErr error          = nil
 	once     sync.Once
 	counter  atomic.Int64
 )
@@ -38,7 +39,6 @@ type TmpDirManager struct {
 }
 
 func (t TmpDirManager) Cleanup() error {
-	// TODO: Release lock file
 	return Destroy(t.baseDir)
 }
 
@@ -67,7 +67,7 @@ func setupOnce() (*TmpDirManager, error) {
 		return nil, err
 	}
 	// TODO: Setup basedir autodeletion (in Windows case)
-	// TODO: Setup lock file in basedir
+	lockFile(path.Join(basedir, "lock"))
 	dirman := TmpDirManager{
 		baseDir: basedir,
 	}
@@ -77,12 +77,8 @@ func setupOnce() (*TmpDirManager, error) {
 }
 
 func Setup() (*TmpDirManager, error) {
-	var err error = nil
 	once.Do(func() {
-		instance, err = setupOnce()
+		instance, setupErr = setupOnce()
 	})
-	if err != nil {
-		return nil, err
-	}
-	return instance, nil
+	return instance, setupErr
 }
