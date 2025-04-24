@@ -23,3 +23,7 @@ go.work.sum
 
 # env file
 .env
+
+/.pre-commit-config.yaml
+/local
+/.direnv
