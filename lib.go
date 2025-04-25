@@ -1,3 +1,6 @@
+// Package gosafetmp implements temporal directories creation with
+// solid guaranties that they will be deleted after program finish
+// one way or another.
 package gosafetmp
 
 import (
@@ -10,6 +13,7 @@ import (
 	"syscall"
 )
 
+// Debug flags
 var (
 	SHOULD_SPAWN_REAPER         = true
 	SHOULD_MARK_FOR_AUTO_DELETE = true
@@ -24,26 +28,39 @@ var (
 	counter  atomic.Int64
 )
 
+// Destroy removes path and all nested entities (if there are).
+// Does NOT return error if path dont exists.
+// Currently just calls os.RemoveAll(path).
+// But may implement more sophisticated strategies (like shred) in future.
 func Destroy(path string) error {
 	return os.RemoveAll(path)
 }
 
+// TmpDirManager is a factory that creates tmp dirs themselves.
+// It implements multiple strategies to make sure that
+// all children dirs will be deleted.
 type TmpDirManager struct {
 	baseDir string
 }
 
+// Cleanup removes all tmp dirs, created with TmpDirManager
 func (t TmpDirManager) Cleanup() error {
 	return Destroy(t.baseDir)
 }
 
+// GetBaseDir returns base directory where all children tmp dirs are created.
 func (t TmpDirManager) GetBaseDir() string {
 	return t.baseDir
 }
 
+// IsInTMPFS reports whether TmpDirManager's basic directory is inside
+// inmemory filesystem. On MS Windows returns false all the time.
 func (t TmpDirManager) IsInTMPFS() bool {
 	return IsInTMPFS(t.baseDir)
 }
 
+// NewDir generates new tmp dir and returns path to it.
+// It is safe to call NewDir concurrently.
 func (t TmpDirManager) NewDir() (string, error) {
 	id := counter.Add(1)
 	dir := path.Join(t.baseDir, strconv.FormatInt(id, 16))
@@ -77,14 +94,13 @@ func setupOnce() (*TmpDirManager, error) {
 		return nil, err
 	}
 	if SHOULD_MARK_FOR_AUTO_DELETE {
-		MarkForAutoDelete(basedir)
+		markForAutoDelete(basedir)
 	}
 	lockfile := path.Join(basedir, "lock")
 	lockFile(lockfile)
 	dirman := TmpDirManager{
 		baseDir: basedir,
 	}
-	// TODO: Set up OS signals handlers
 	if SHOULD_CATCH_SIGNALS {
 		catchSignals(func() { Destroy(basedir) })
 	}
@@ -97,6 +113,8 @@ func setupOnce() (*TmpDirManager, error) {
 	return &dirman, nil
 }
 
+// Setup spawn instance of TmpDirManager.
+// This function returns same instance each time called.
 func Setup() (*TmpDirManager, error) {
 	once.Do(func() {
 		instance, setupErr = setupOnce()

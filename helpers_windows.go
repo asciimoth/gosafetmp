@@ -8,8 +8,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-const TMPFS_MAGIC = 0x01021994
-
 func sysProcAttr() *syscall.SysProcAttr {
 	return &syscall.SysProcAttr{
 		CreationFlags: windows.CREATE_NEW_PROCESS_GROUP |
@@ -17,11 +15,13 @@ func sysProcAttr() *syscall.SysProcAttr {
 	}
 }
 
+// IsInTMPFS reports whether path is inside inmemory filesystem.
+// On MS Windows returns false all the time.
 func IsInTMPFS(path string) bool {
 	return false
 }
 
-func MarkForAutoDelete(path string) error {
+func markForAutoDelete(path string) error {
 	// UTF-16 encode the path
 	p, err := windows.UTF16PtrFromString(path)
 	if err != nil {
