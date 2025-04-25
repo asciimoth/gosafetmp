@@ -23,3 +23,9 @@ func IsInTMPFS(path string) bool {
 	}
 	return st.Type == TMPFS_MAGIC
 }
+
+func MarkForAutoDelete(path string) error {
+	// Do nothing
+	// It is Window-only feature
+	return nil
+}

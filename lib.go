@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	SHOULD_SPAWN_REAPER = true
+	SHOULD_SPAWN_REAPER         = true
+	SHOULD_MARK_FOR_AUTO_DELETE = true
 )
 
 // There are MUST be only one instance of TmpDirManager in whole program
@@ -58,7 +59,9 @@ func setupOnce() (*TmpDirManager, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Setup basedir auto-deletion (in Windows case)
+	if SHOULD_MARK_FOR_AUTO_DELETE {
+		MarkForAutoDelete(basedir)
+	}
 	lockfile := path.Join(basedir, "lock")
 	lockFile(lockfile)
 	dirman := TmpDirManager{

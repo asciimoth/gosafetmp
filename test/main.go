@@ -43,6 +43,7 @@ func tmpDirs(man gosafetmp.TmpDirManager, def bool) {
 func dryCase() {
 	pcase("Dry run")
 	gosafetmp.SHOULD_SPAWN_REAPER = false
+	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	printMan(*tmpman)
@@ -52,6 +53,7 @@ func dryCase() {
 func rootDeferCase() {
 	pcase("Only root defer")
 	gosafetmp.SHOULD_SPAWN_REAPER = false
+	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	defer tmpman.Cleanup()
@@ -62,6 +64,7 @@ func rootDeferCase() {
 func tmpsDeferCase() {
 	pcase("Only tmp dirs defer")
 	gosafetmp.SHOULD_SPAWN_REAPER = false
+	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	printMan(*tmpman)
@@ -71,6 +74,17 @@ func tmpsDeferCase() {
 func reaperCase() {
 	pcase("Only reaper guard")
 	gosafetmp.SHOULD_SPAWN_REAPER = true
+	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
+	tmpman, err := gosafetmp.Setup()
+	check(err)
+	printMan(*tmpman)
+	tmpDirs(*tmpman, false)
+}
+
+func winAutoDelCase() {
+	pcase("Auto deletion [Windows only]")
+	gosafetmp.SHOULD_SPAWN_REAPER = false
+	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = true
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	printMan(*tmpman)
@@ -79,10 +93,11 @@ func reaperCase() {
 
 func main() {
 	cases := map[string](func()){
-		"dry":         dryCase,
-		"root-defer":  rootDeferCase,
-		"temps-defer": tmpsDeferCase,
-		"reaper":      reaperCase,
+		"dry":          dryCase,
+		"root-defer":   rootDeferCase,
+		"temps-defer":  tmpsDeferCase,
+		"reaper":       reaperCase,
+		"win-auto-del": winAutoDelCase,
 	}
 	if len(os.Args) < 2 {
 		printCases(cases)
