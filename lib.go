@@ -58,7 +58,7 @@ func setupOnce() (*TmpDirManager, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Setup basedir autodeletion (in Windows case)
+	// TODO: Setup basedir auto-deletion (in Windows case)
 	lockfile := path.Join(basedir, "lock")
 	lockFile(lockfile)
 	dirman := TmpDirManager{

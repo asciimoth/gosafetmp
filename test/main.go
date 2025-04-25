@@ -30,7 +30,7 @@ func printCases(cases map[string](func())) {
 }
 
 func tmpDirs(man gosafetmp.TmpDirManager, def bool) {
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		dir, err := man.NewDir()
 		check(err)
 		fmt.Println("NEW TMP DIR: ", dir)

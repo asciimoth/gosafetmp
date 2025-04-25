@@ -26,6 +26,7 @@
         inherit (checks.pre-commit-check) shellHook;
         buildInputs = [
           pkgs.go_1_23
+          pkgs.just
         ];
       };
     });
