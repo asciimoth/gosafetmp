@@ -2,15 +2,18 @@ package gosafetmp
 
 import (
 	"os"
+	"os/signal"
 	"path"
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"syscall"
 )
 
 var (
 	SHOULD_SPAWN_REAPER         = true
 	SHOULD_MARK_FOR_AUTO_DELETE = true
+	SHOULD_CATCH_SIGNALS        = true
 )
 
 // There are MUST be only one instance of TmpDirManager in whole program
@@ -51,6 +54,20 @@ func (t TmpDirManager) NewDir() (string, error) {
 	return dir, nil
 }
 
+func catchSignals(callback func()) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs,
+		os.Interrupt,    // CTRL+C on both UNIX & Windows
+		syscall.SIGTERM, // “kill” on UNIX, service stop on Windows
+		syscall.SIGHUP,  // hangup on UNIX
+	)
+	go func() {
+		<-sigs
+		callback()
+		os.Exit(1)
+	}()
+}
+
 func setupOnce() (*TmpDirManager, error) {
 	if SHOULD_SPAWN_REAPER {
 		checkReaper()
@@ -68,6 +85,9 @@ func setupOnce() (*TmpDirManager, error) {
 		baseDir: basedir,
 	}
 	// TODO: Set up OS signals handlers
+	if SHOULD_CATCH_SIGNALS {
+		catchSignals(func() { Destroy(basedir) })
+	}
 	if SHOULD_SPAWN_REAPER {
 		err := spawnReaper(basedir, lockfile)
 		if err != nil {

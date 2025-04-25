@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/asciimoth/gosafetmp"
 )
@@ -44,6 +45,7 @@ func dryCase() {
 	pcase("Dry run")
 	gosafetmp.SHOULD_SPAWN_REAPER = false
 	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
+	gosafetmp.SHOULD_CATCH_SIGNALS = false
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	printMan(*tmpman)
@@ -54,6 +56,7 @@ func rootDeferCase() {
 	pcase("Only root defer")
 	gosafetmp.SHOULD_SPAWN_REAPER = false
 	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
+	gosafetmp.SHOULD_CATCH_SIGNALS = false
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	defer tmpman.Cleanup()
@@ -65,6 +68,7 @@ func tmpsDeferCase() {
 	pcase("Only tmp dirs defer")
 	gosafetmp.SHOULD_SPAWN_REAPER = false
 	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
+	gosafetmp.SHOULD_CATCH_SIGNALS = false
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	printMan(*tmpman)
@@ -75,6 +79,7 @@ func reaperCase() {
 	pcase("Only reaper guard")
 	gosafetmp.SHOULD_SPAWN_REAPER = true
 	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
+	gosafetmp.SHOULD_CATCH_SIGNALS = false
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	printMan(*tmpman)
@@ -85,10 +90,26 @@ func winAutoDelCase() {
 	pcase("Auto deletion [Windows only]")
 	gosafetmp.SHOULD_SPAWN_REAPER = false
 	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = true
+	gosafetmp.SHOULD_CATCH_SIGNALS = false
 	tmpman, err := gosafetmp.Setup()
 	check(err)
 	printMan(*tmpman)
 	tmpDirs(*tmpman, false)
+}
+
+func sigCase() {
+	pcase("Dry run")
+	gosafetmp.SHOULD_SPAWN_REAPER = false
+	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
+	gosafetmp.SHOULD_CATCH_SIGNALS = true
+	tmpman, err := gosafetmp.Setup()
+	check(err)
+	printMan(*tmpman)
+	tmpDirs(*tmpman, false)
+	for {
+		fmt.Println("== WAITING FOR EXTERNAL TERMINATION ==")
+		time.Sleep(time.Second * 5)
+	}
 }
 
 func main() {
@@ -97,6 +118,7 @@ func main() {
 		"root-defer":   rootDeferCase,
 		"temps-defer":  tmpsDeferCase,
 		"reaper":       reaperCase,
+		"signal-case":  sigCase,
 		"win-auto-del": winAutoDelCase,
 	}
 	if len(os.Args) < 2 {
