@@ -98,7 +98,7 @@ func winAutoDelCase() {
 }
 
 func sigCase() {
-	pcase("Dry run")
+	pcase("Signal catch")
 	gosafetmp.SHOULD_SPAWN_REAPER = false
 	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
 	gosafetmp.SHOULD_CATCH_SIGNALS = true
@@ -112,6 +112,21 @@ func sigCase() {
 	}
 }
 
+func panicCase() {
+	pcase("Panic catch")
+	gosafetmp.SHOULD_SPAWN_REAPER = false
+	gosafetmp.SHOULD_MARK_FOR_AUTO_DELETE = false
+	gosafetmp.SHOULD_CATCH_SIGNALS = false
+	tmpman, err := gosafetmp.Setup()
+	defer func() {
+		tmpman.Cleanup()
+	}()
+	check(err)
+	printMan(*tmpman)
+	tmpDirs(*tmpman, false)
+	panic("PANIC!")
+}
+
 func main() {
 	cases := map[string](func()){
 		"dry":          dryCase,
@@ -120,6 +135,7 @@ func main() {
 		"reaper":       reaperCase,
 		"signal-case":  sigCase,
 		"win-auto-del": winAutoDelCase,
+		"panic-case":   panicCase,
 	}
 	if len(os.Args) < 2 {
 		printCases(cases)
