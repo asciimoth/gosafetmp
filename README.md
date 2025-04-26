@@ -1,3 +1,4 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/asciimoth/gosafetmp.svg)](https://pkg.go.dev/github.com/asciimoth/gosafetmp)
 # gosafetmp
 Gosafetmp implements temporary directory creation with solid guarantees that they will be deleted after the program finishes, one way or another.
 
